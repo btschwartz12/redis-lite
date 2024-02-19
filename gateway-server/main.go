@@ -44,12 +44,14 @@ func createGRPCAction(action gRPCAction, req proto.Message) http.HandlerFunc {
 			return
 		}
 
+		log.Printf("Received request type: %T", req)
+
 		resp, err := action(client, context.Background(), req)
 		if err != nil {
 			http.Error(w, "gRPC action failed", http.StatusInternalServerError)
 			return
 		}
-
+		
 		jsonData, err := protojson.MarshalOptions{UseProtoNames: true}.Marshal(resp)
 		if err != nil {
 			http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
@@ -62,21 +64,24 @@ func createGRPCAction(action gRPCAction, req proto.Message) http.HandlerFunc {
 }
 
 func storeHandler() http.HandlerFunc {
-    return createGRPCAction(func(client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
+	f := func (client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
         return client.Store(ctx, req.(*kv_store.StoreRequest))
-    }, &kv_store.StoreRequest{})
+    }
+	return createGRPCAction(f, &kv_store.StoreRequest{})
 }
 
 func retrieveHandler() http.HandlerFunc {
-    return createGRPCAction(func(client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
-        return client.Retrieve(ctx, req.(*kv_store.RetrieveRequest))
-    }, &kv_store.RetrieveRequest{})
+    f := func (client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
+		return client.Retrieve(ctx, req.(*kv_store.RetrieveRequest))
+	}
+	return createGRPCAction(f, &kv_store.RetrieveRequest{})
 }
 
 func deleteHandler() http.HandlerFunc {
-    return createGRPCAction(func(client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
-        return client.Delete(ctx, req.(*kv_store.DeleteRequest))
-    }, &kv_store.DeleteRequest{})
+    f := func (client kv_store.KeyValueStoreClient, ctx context.Context, req proto.Message) (proto.Message, error) {
+		return client.Delete(ctx, req.(*kv_store.DeleteRequest))
+	}
+	return createGRPCAction(f, &kv_store.DeleteRequest{})
 }
 
 func main() {

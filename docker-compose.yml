@@ -4,15 +4,18 @@ services:
     container_name: kvs-server
     build:
       context: .
-      dockerfile: Dockerfile.kvs-server
+      dockerfile: kvs-server/Dockerfile
     environment:
       LISTEN_PORT: ":8080"
+      REDIS_ADDRESS: "redis:6379"
+    depends_on:
+      - redis
 
   gateway-server:
     container_name: gateway-server
     build:
       context: .
-      dockerfile: Dockerfile.gateway-server
+      dockerfile: gateway-server/Dockerfile
     environment:
       LISTEN_PORT: ":8081"
       GRPC_SERVER_ADDRESS: "kvs-server:8080"
@@ -20,6 +23,10 @@ services:
       - "8081:8081"
     depends_on:
       - kvs-server
+
+  redis:
+    container_name: redis
+    image: "redis:alpine"
 
 
 
